@@ -1,0 +1,72 @@
+#!/usr/local/bin/pwsh
+
+using namespace System.Collections.Generic
+
+param(
+    [string] $Project,
+
+    [Parameter()]
+    [string[]] $Modules,
+
+    [ValidateSet(
+        "iOS",
+        "tvOS",
+        "visionOS",
+        "macOS",
+        "Windows",
+        "Android"
+    )]
+    [string] $Platform,
+
+    [ValidateSet(
+        "Debug",
+        "Release"
+    )]
+    [string] $Configuration = "Debug",
+
+    [switch] $Clean,
+    [switch] $Recompile,
+    [switch] $Relink,
+    [switch] $PrintCompileCommands,
+    [switch] $PrintLinkCommands,
+    [switch] $ProjectToolsOnly
+)
+
+. ./ProjectTools/Scripts/Commons.ps1
+
+CompileProjectTools
+
+if (-not $?)
+{
+    return;
+}
+
+if ($ProjectToolsOnly)
+{
+    Write-Host "Project tools only compilation requested. Exiting."
+
+    return;
+}
+
+$Arguments = [List[string]]::new()
+
+if ($Clean)
+{
+    $Arguments.Add("Clean")
+}
+else
+{
+    $Arguments.Add("Compile")
+}
+
+AddArgument ([ref]$Arguments) "Project" $Project
+AddArgument ([ref]$Arguments) "Modules" $Modules
+AddArgument ([ref]$Arguments) "Platform" $Platform
+AddArgument ([ref]$Arguments) "Configuration" $Configuration
+AddSwitch ([ref]$Arguments) "Recompile" $Recompile
+AddSwitch ([ref]$Arguments) "PrintCompileCommands" $PrintCompileCommands
+AddSwitch ([ref]$Arguments) "PrintLinkCommands" $PrintLinkCommands
+
+dotnet exec ./Binaries/DotNet/ProjectTools/BuildTool.dll $Arguments
+
+Exit $LASTEXITCODE
