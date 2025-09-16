@@ -24,6 +24,12 @@ param(
     )]
     [string] $Configuration = "Debug",
 
+    [ValidateSet(
+        "x64",
+        "Arm64"
+    )]
+    [string] $Architecture = "x64",
+
     [switch] $Clean,
     [switch] $Recompile,
     [switch] $Relink,

@@ -8,7 +8,7 @@ using Shared.Toolchains;
 
 namespace BuildTool.Compilation;
 
-public class LinkModuleTask(object InThreadSafeLock, CompileModuleInfo InInfo, ATargetPlatform InTargetPlatform, ECompileConfiguration InConfiguration)
+public class LinkModuleTask(object InThreadSafeLock, CompileModuleInfo InInfo, ATargetPlatform InTargetPlatform, ECompileConfiguration InConfiguration, ETargetArch InArch)
 {
     private readonly ProjectDirectories _compileDirectories = ProjectDirectories.Shared;
 
@@ -126,6 +126,7 @@ public class LinkModuleTask(object InThreadSafeLock, CompileModuleInfo InInfo, A
             ObjectFiles = ObjectFiles,
             TargetPlatform = InTargetPlatform.Platform,
             Configuration = InConfiguration,
+            Arch = InArch,
             LinkWithLibraries = LinkWithLibraries,
         };
         

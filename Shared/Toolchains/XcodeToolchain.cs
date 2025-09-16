@@ -14,12 +14,13 @@ public class XcodeToolchain : AClangToolchain
     public const string IPhoneOSVersionMin = "17.0";
     public const string MacOSVersionMin = "13.4";
 
-    private readonly Dictionary<ETargetPlatform, AppleCompiler> _appleCompilers;
+    private readonly Dictionary<ETargetPlatform, Dictionary<ETargetArch, AppleCompiler>> _appleCompilers;
     private readonly MetalCompiler _metalCompiler = new();
 
     public readonly string DeveloperPath;
     public readonly string MacOSSdkPath;
     public readonly string IPhoneOSSdkPath;
+    public readonly string IPhoneSimulatorSdkPath;
     public readonly string SdkVersion;
 
     public XcodeToolchain()
@@ -27,11 +28,13 @@ public class XcodeToolchain : AClangToolchain
         ProcessResult XcodeSelectResult = this.Run(["xcode-select", "-p"]);
         ProcessResult ShowSdkPathResult = this.Run(["xcrun", "--sdk", "macosx", "--show-sdk-path"]);
         ProcessResult IPhoneSdkPathResult = this.Run(["xcrun", "--sdk", "iphoneos", "--show-sdk-path"]);
+        ProcessResult IPhoneSimulatorSdkPathResult = this.Run(["xcrun", "--sdk", "iphonesimulator", "--show-sdk-path"]);
         ProcessResult ShowSdkVersionResult = this.Run(["xcrun", "--show-sdk-version"]);
 
         DeveloperPath = XcodeSelectResult.StandardOutput;
         MacOSSdkPath = ShowSdkPathResult.StandardOutput.TrimEnd();
         IPhoneOSSdkPath = IPhoneSdkPathResult.StandardOutput.TrimEnd();
+        IPhoneSimulatorSdkPath = IPhoneSimulatorSdkPathResult.StandardOutput.TrimEnd();
         SdkVersion = ShowSdkVersionResult.StandardOutput;
 
         if (string.IsNullOrEmpty(DeveloperPath) || string.IsNullOrEmpty(MacOSSdkPath) || string.IsNullOrEmpty(SdkVersion))
@@ -39,14 +42,29 @@ public class XcodeToolchain : AClangToolchain
             throw new XcodeNotInstalledException();
         }
 
-        _appleCompilers = [];
-        _appleCompilers.Add(ETargetPlatform.iOS, new($"-miphoneos-version-min={IPhoneOSVersionMin}", IPhoneOSSdkPath));
-        _appleCompilers.Add(ETargetPlatform.macOS, new($"-mmacosx-version-min={MacOSVersionMin}", MacOSSdkPath));
+        Dictionary<ETargetArch, AppleCompiler> IOSPlatform = new()
+        {
+            { ETargetArch.Arm64, new($"-miphoneos-version-min={IPhoneOSVersionMin}", IPhoneOSSdkPath) },
+            { ETargetArch.x64, new($"-miphonesimulator-version-min={IPhoneOSVersionMin}", IPhoneSimulatorSdkPath) },
+        };
+
+        AppleCompiler MacOSCompiler = new($"mmacosx-version-min={MacOSVersionMin}", MacOSSdkPath);
+        Dictionary<ETargetArch, AppleCompiler> MacOSPlatform = new()
+        {
+            { ETargetArch.Arm64, MacOSCompiler },
+            { ETargetArch.x64, new($"mmacosx-version-min={MacOSVersionMin}", MacOSSdkPath) },
+        };
+
+        _appleCompilers = new()
+        {
+            { ETargetPlatform.iOS, IOSPlatform },
+            { ETargetPlatform.macOS, MacOSPlatform }
+        };
     }
 
     public override string[] GetCompileCommandline(CompileCommandInfo InCompileCommandInfo)
     {
-        ICompiler Compiler = GetCompiler(InCompileCommandInfo.TargetFile, InCompileCommandInfo.TargetPlatform);
+        ICompiler Compiler = GetCompiler(InCompileCommandInfo.TargetFile, InCompileCommandInfo.TargetPlatform, InCompileCommandInfo.TargetArch);
 
         return Compiler.GetCompileCommandLine(InCompileCommandInfo);
     }
@@ -87,7 +105,7 @@ public class XcodeToolchain : AClangToolchain
         return InSourceFile.Extension switch
         {
             ".metal" => _metalCompiler.GetObjectFileExtension(),
-            _ => _appleCompilers[ETargetPlatform.macOS].GetObjectFileExtension()
+            _ => ".o"
         };
     }
 
@@ -115,12 +133,12 @@ public class XcodeToolchain : AClangToolchain
         Console.WriteLine($"Using Xcode Toolchain. Sdk version {SdkVersion}");
     }
 
-    private ICompiler GetCompiler(FileReference InFile, ETargetPlatform InTargetPlatform)
+    private ICompiler GetCompiler(FileReference InFile, ETargetPlatform InTargetPlatform, ETargetArch InTargetArch)
     {
         return InFile.Extension switch
         {
             ".metal" => _metalCompiler,
-            _ => _appleCompilers[InTargetPlatform]
+            _ => _appleCompilers[InTargetPlatform][InTargetArch]
         };
     }
 
@@ -129,7 +147,7 @@ public class XcodeToolchain : AClangToolchain
         return InInfo.Module.BinaryType switch
         {
             EModuleBinaryType.ShaderLibrary => _metalCompiler,
-            _ => _appleCompilers[InInfo.TargetPlatform]
+            _ => _appleCompilers[InInfo.TargetPlatform][InInfo.Arch]
         };
     }
 }

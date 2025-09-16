@@ -87,7 +87,7 @@ public partial class VisualStudioToolchain : AClangToolchain
 
     public override string GetObjectFileExtension(FileReference InSourceFile)
     {
-        return _windowsCompiler.GetObjectFileExtension();
+        return ".obj";
     }
 
     public override string[] GetAutomaticModuleCompilerDefinitions(AModuleDefinition InModule, ETargetPlatform InTargetPlatform)

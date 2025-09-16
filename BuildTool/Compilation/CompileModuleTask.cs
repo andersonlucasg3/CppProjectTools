@@ -8,7 +8,7 @@ using Shared.Toolchains;
 
 namespace BuildTool.Compilation;
 
-public class CompileModuleTask(object InThreadSafeLock, CompileModuleInfo InInfo, ATargetPlatform InTargetPlatform, ECompileConfiguration InConfiguration)
+public class CompileModuleTask(object InThreadSafeLock, CompileModuleInfo InInfo, ATargetPlatform InTargetPlatform, ECompileConfiguration InConfiguration, ETargetArch InArch)
 {
     public void Compile(bool bPrintCompileCommands)
     {
@@ -93,7 +93,7 @@ public class CompileModuleTask(object InThreadSafeLock, CompileModuleInfo InInfo
         
         Parallelization.ForEach(InSourceCollection.SourceFiles, SourceFile =>
         {
-            CompileAction SourceCompileAction = new(InInfo.Module, InTargetPlatform, InConfiguration, SourceFile, ObjectsDirectory, InSourceCollection);
+            CompileAction SourceCompileAction = new(InInfo.Module, InTargetPlatform, InConfiguration, InArch, SourceFile, ObjectsDirectory, InSourceCollection);
 
             lock (InThreadSafeLock)
             {

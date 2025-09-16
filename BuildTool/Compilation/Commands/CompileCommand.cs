@@ -19,7 +19,8 @@ public class Compile : IExecutableCommand
         "-Project=/path/to/project",
         "[-Modules=module1,module2,...]",
         $"-Platform=[{string.Join("|", Enum.GetNames<ETargetPlatform>())}]",
-        $"-Configuration=[{string.Join('|', Enum.GetNames<ECompileConfiguration>())}]"
+        $"-Configuration=[{string.Join('|', Enum.GetNames<ECompileConfiguration>())}]",
+        $"-Arch=[{string.Join('|', Enum.GetNames<ETargetArch>())}]"
     );
 
     public readonly object _threadSafeLock = new();
@@ -29,6 +30,7 @@ public class Compile : IExecutableCommand
         string ProjectName = Arguments.GetArgumentValue<string>("Project", true) ?? "";
         string PlatformString = Arguments.GetArgumentValue<string>("Platform", true) ?? "";
         string ConfigurationString = Arguments.GetArgumentValue<string>("Configuration", true) ?? "";
+        string ArchString = Arguments.GetArgumentValue<string>("Arch") ?? "";
 
         string[] Modules = Arguments.GetArrayArgument<string>("Modules");
 
@@ -38,6 +40,10 @@ public class Compile : IExecutableCommand
 
         ETargetPlatform CompilePlatform = PlatformString.ToEnum<ETargetPlatform>();
         ECompileConfiguration CompileConfiguration = ConfigurationString.ToEnum<ECompileConfiguration>();
+        if (!ArchString.TryToEnum(out ETargetArch CompileArch))
+        {
+            CompileArch = ETargetArch.x64; // TODO: replace this with host arch
+        }
 
         DirectoryReference RootDirectory = Environment.CurrentDirectory;
         ProjectFinder.CreateAndCompileProject(RootDirectory, ProjectName);
@@ -140,7 +146,7 @@ public class Compile : IExecutableCommand
         bool bSuccess = true;
         Parallelization.ForEach(CompileModuleInfos, ModuleInfo =>
         {
-            CompileModuleTask CompileTask = new(_threadSafeLock, ModuleInfo, TargetPlatform, CompileConfiguration);
+            CompileModuleTask CompileTask = new(_threadSafeLock, ModuleInfo, TargetPlatform, CompileConfiguration, CompileArch);
             CompileTask.Compile(bPrintCompileCommands);
 
             CopyResourcesTask CopyResourcesTask = new(ModuleInfo.Module);
@@ -148,7 +154,7 @@ public class Compile : IExecutableCommand
 
             CompileModuleInfo Info = ModuleCompilationResultMap[ModuleInfo.Module];
 
-            LinkModuleTask LinkTask = new(_threadSafeLock, ModuleInfo, TargetPlatform, CompileConfiguration);
+            LinkModuleTask LinkTask = new(_threadSafeLock, ModuleInfo, TargetPlatform, CompileConfiguration, CompileArch);
             LinkTask.Link(ModuleCompilationResultMap, bPrintLinkCommands);
 
             lock (_threadSafeLock)

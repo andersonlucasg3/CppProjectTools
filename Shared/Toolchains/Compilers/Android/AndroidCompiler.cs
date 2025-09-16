@@ -52,11 +52,6 @@ public class AndroidCompiler(DirectoryReference InPrebuiltPlatformRoot, string I
         ];
     }
 
-    public override string GetObjectFileExtension()
-    {
-        return ".o";
-    }
-
     private DirectoryReference[] GetSystemIncludePaths()
     {
         DirectoryReference SysrootInclude = InPrebuiltPlatformRoot.Combine("sysroot", "usr", "include");

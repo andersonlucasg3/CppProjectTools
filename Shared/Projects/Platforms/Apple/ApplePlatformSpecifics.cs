@@ -4,8 +4,9 @@ namespace Shared.Projects.Platforms.Apple;
 
 public class ApplePlatformSpecifics
 {
-    private readonly HashSet<string> _frameworkDependencies = ["CoreFoundation", "Foundation"];
     private readonly List<DirectoryReference> _frameworkSearchPaths = [];
+
+    protected virtual HashSet<string> _frameworkDependencies { get; } = ["CoreFoundation", "Foundation"];
 
     public IReadOnlySet<string> FrameworkDependencies => _frameworkDependencies;
     public IReadOnlyList<DirectoryReference> FrameworkSearchPaths => _frameworkSearchPaths;

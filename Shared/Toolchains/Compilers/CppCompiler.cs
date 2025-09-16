@@ -11,5 +11,4 @@ public abstract class ACppCompiler : ICompiler
 
     public abstract string[] GetCompileCommandLine(CompileCommandInfo InCompileCommandInfo);
     public abstract string[] GetLinkCommandLine(LinkCommandInfo InLinkCommandInfo);
-    public abstract string GetObjectFileExtension();
 }

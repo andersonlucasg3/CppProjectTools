@@ -3,6 +3,13 @@ using Shared.Toolchains;
 
 namespace Shared.Platforms;
 
+public enum ETargetArch
+{
+    Any,
+    x64,
+    Arm64
+}
+
 public enum ETargetPlatform
 {
     Any,

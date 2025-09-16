@@ -57,11 +57,6 @@ public class WindowsCompiler(string InClangPath, string InLinkPath) : ACppCompil
         return [.. CommandLine];
     }
 
-    public override string GetObjectFileExtension()
-    {
-        return ".obj";
-    }
-
     private static string[] GetCompilerOptimizationArguments(ECompileConfiguration InConfiguration)
     {
         return InConfiguration switch

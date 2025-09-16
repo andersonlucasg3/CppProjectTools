@@ -51,6 +51,8 @@ public class AppleCompiler(string InTargetOSVersionMin, string InSdkPath) : ACpp
             string.Join(' ', InLinkCommandInfo.ObjectFiles.Select(Each => Each.PlatformPath)),
             "-o",
             InLinkCommandInfo.LinkedFile.PlatformPath,
+            "-isysroot",
+            InSdkPath,
             "-rpath",
             "@loader_path/",
         ];
@@ -96,11 +98,6 @@ public class AppleCompiler(string InTargetOSVersionMin, string InSdkPath) : ACpp
         CommandLine.Add(InTargetOSVersionMin);
 
         return [.. CommandLine];
-    }
-
-    public override string GetObjectFileExtension()
-    {
-        return ".o";
     }
 
     private string[] GetLanguageBySourceExtension(string FileExtension)

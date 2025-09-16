@@ -92,7 +92,7 @@ public class AndroidToolchain : AClangToolchain
 
     public override string GetObjectFileExtension(FileReference InSourceFile)
     {
-        return _compiler.GetObjectFileExtension();
+        return ".o";
     }
 
     public override string[] GetAutomaticModuleCompilerDefinitions(AModuleDefinition InModule, ETargetPlatform InTargetPlatform)

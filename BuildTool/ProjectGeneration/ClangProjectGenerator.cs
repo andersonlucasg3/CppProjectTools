@@ -20,7 +20,7 @@ public class ClangCompileCommand
     [JsonPropertyName("output")] public string Output { get; set; } = "";
 }
 
-public class ClangProjectGenerator(AModuleDefinition[] InModules, ATargetPlatform InTargetPlatform, ECompileConfiguration InConfiguration)
+public class ClangProjectGenerator(AModuleDefinition[] InModules, ATargetPlatform InTargetPlatform, ECompileConfiguration InConfiguration, ETargetArch InArch)
     : IProjectGenerator
 {
     private readonly ProjectDirectories _compileDirectories = ProjectDirectories.Shared;
@@ -45,7 +45,7 @@ public class ClangProjectGenerator(AModuleDefinition[] InModules, ATargetPlatfor
             
             Parallelization.ForEach(SourceCollection.SourceFiles, SourceFile =>
             {
-                CompileAction Action = new(Module, InTargetPlatform, InConfiguration, SourceFile, ObjectsDirectory, SourceCollection);
+                CompileAction Action = new(Module, InTargetPlatform, InConfiguration, InArch, SourceFile, ObjectsDirectory, SourceCollection);
 
                 DirectoryReference[] HeaderSearchPaths = [
                     .. Module.GetHeaderSearchPaths(ETargetPlatform.Any),
@@ -66,6 +66,7 @@ public class ClangProjectGenerator(AModuleDefinition[] InModules, ATargetPlatfor
                     HeaderSearchPaths = HeaderSearchPaths,
                     Configuration = InConfiguration,
                     TargetPlatform = InTargetPlatform.Platform,
+                    TargetArch = InArch,
                     CompilerDefinitions = CompilerDefinitions
                 };
                 

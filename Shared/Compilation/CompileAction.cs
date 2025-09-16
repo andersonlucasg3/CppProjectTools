@@ -36,7 +36,7 @@ public class CompileAction
 
     public string KeyName => SourceFile.RelativePath;
 
-    public CompileAction(AModuleDefinition InModule, ATargetPlatform InTargetPlatform, ECompileConfiguration InConfiguration, FileReference InSourceFile, DirectoryReference InObjectsDirectory, ISourceCollection InSourceCollection)
+    public CompileAction(AModuleDefinition InModule, ATargetPlatform InTargetPlatform, ECompileConfiguration InConfiguration, ETargetArch InArch, FileReference InSourceFile, DirectoryReference InObjectsDirectory, ISourceCollection InSourceCollection)
     {
         _sourceCollection = InSourceCollection;
 
@@ -65,6 +65,7 @@ public class CompileAction
             HeaderSearchPaths = HeaderSearchPaths,
             Configuration = InConfiguration,
             TargetPlatform = InTargetPlatform.Platform,
+            TargetArch = InArch,
             CompilerDefinitions = CompilerDefinitions
         };
     }

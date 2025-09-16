@@ -25,6 +25,7 @@ public class GenCodeProject : IExecutableCommand
         string Generator = Arguments.GetArgumentValue<string>("Generator", true) ?? "";
         string PlatformString = Arguments.GetArgumentValue<string>("Platform", true) ?? "";
         string ConfigurationString = Arguments.GetArgumentValue<string>("Configuration", true) ?? "";
+        string ArchString = Arguments.GetArgumentValue<string>("Arch", false) ?? "";
 
         DirectoryReference RootDirectory = Environment.CurrentDirectory;
         ProjectFinder.CreateAndCompileProject(RootDirectory, ProjectName);
@@ -34,6 +35,10 @@ public class GenCodeProject : IExecutableCommand
         EProjectGeneratorType GeneratorType = Generator.ToEnum<EProjectGeneratorType>();
         ETargetPlatform CompilePlatform = PlatformString.ToEnum<ETargetPlatform>();
         ECompileConfiguration CompileConfiguration = ConfigurationString.ToEnum<ECompileConfiguration>();
+        if (!ArchString.TryToEnum(out ETargetArch CompileArch))
+        {
+            CompileArch = ETargetArch.x64;
+        }
         
         AHostPlatform HostPlatform = AHostPlatform.GetHost();
         if (!HostPlatform.SupportedTargetPlatforms.TryGetValue(CompilePlatform, out ATargetPlatform? TargetPlatform)) throw new TargetPlatformNotSupportedException(HostPlatform, CompilePlatform);
@@ -47,7 +52,7 @@ public class GenCodeProject : IExecutableCommand
         
         Dictionary<EProjectGeneratorType, IProjectGenerator> ProjectGenerators = new()
         {
-            { EProjectGeneratorType.Clang, new ClangProjectGenerator(SelectedModules, TargetPlatform, CompileConfiguration) },
+            { EProjectGeneratorType.Clang, new ClangProjectGenerator(SelectedModules, TargetPlatform, CompileConfiguration, CompileArch) },
             { EProjectGeneratorType.VisualStudio, new VisualStudioProjectGenerator(Project, TargetPlatform) },
         };
         

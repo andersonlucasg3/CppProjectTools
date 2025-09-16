@@ -16,12 +16,14 @@ public struct CompileCommandInfo
     public required DirectoryReference[] HeaderSearchPaths;
     public required ECompileConfiguration Configuration;
     public required ETargetPlatform TargetPlatform;
+    public required ETargetArch TargetArch;
     public required string[] CompilerDefinitions;
 }
 
 public struct LinkCommandInfo
 {
     public required ETargetPlatform Platform;
+    public required ETargetArch Arch;
     public required AModuleDefinition Module;
     public required FileReference LinkedFile;
     public required FileReference[] ObjectFiles;
