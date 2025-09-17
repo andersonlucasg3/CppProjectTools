@@ -48,11 +48,11 @@ public class XcodeToolchain : AClangToolchain
             { ETargetArch.x64, new($"-miphonesimulator-version-min={IPhoneOSVersionMin}", IPhoneSimulatorSdkPath) },
         };
 
-        AppleCompiler MacOSCompiler = new($"mmacosx-version-min={MacOSVersionMin}", MacOSSdkPath);
+        AppleCompiler MacOSCompiler = new($"-mmacosx-version-min={MacOSVersionMin}", MacOSSdkPath);
         Dictionary<ETargetArch, AppleCompiler> MacOSPlatform = new()
         {
             { ETargetArch.Arm64, MacOSCompiler },
-            { ETargetArch.x64, new($"mmacosx-version-min={MacOSVersionMin}", MacOSSdkPath) },
+            { ETargetArch.x64, new($"-mmacosx-version-min={MacOSVersionMin}", MacOSSdkPath) },
         };
 
         _appleCompilers = new()

@@ -15,5 +15,7 @@ public class PlatformSpecifics
     public MacPlatformSpecifics GetMac() => (MacPlatformSpecifics)_appleSpecificsMap[ETargetPlatform.macOS];
     public IOSPlatformSpecifics GetIOS() => (IOSPlatformSpecifics)_appleSpecificsMap[ETargetPlatform.iOS];
 
+    public AppleGlobalPlatformSpecifics GetApple() => new([.. _appleSpecificsMap.Values]);
+
     internal ApplePlatformSpecifics Get(ETargetPlatform InTargetPlatform) => _appleSpecificsMap[InTargetPlatform];
 }

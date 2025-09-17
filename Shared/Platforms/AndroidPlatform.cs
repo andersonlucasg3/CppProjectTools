@@ -23,7 +23,7 @@ public class AndroidSingleModuleDefiniton : AModuleDefinition
 
     protected override string SourcesDirectoryName => ".";
 
-    protected override void Configure()
+    protected override void Configure(ATargetPlatform InTargetPlatform)
     {
                
     }

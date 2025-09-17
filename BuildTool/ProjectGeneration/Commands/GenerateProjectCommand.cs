@@ -30,8 +30,6 @@ public class GenCodeProject : IExecutableCommand
         DirectoryReference RootDirectory = Environment.CurrentDirectory;
         ProjectFinder.CreateAndCompileProject(RootDirectory, ProjectName);
 
-        AProjectDefinition Project = ProjectFinder.FindProject(ProjectName);
-
         EProjectGeneratorType GeneratorType = Generator.ToEnum<EProjectGeneratorType>();
         ETargetPlatform CompilePlatform = PlatformString.ToEnum<ETargetPlatform>();
         ECompileConfiguration CompileConfiguration = ConfigurationString.ToEnum<ECompileConfiguration>();
@@ -43,6 +41,9 @@ public class GenCodeProject : IExecutableCommand
         AHostPlatform HostPlatform = AHostPlatform.GetHost();
         if (!HostPlatform.SupportedTargetPlatforms.TryGetValue(CompilePlatform, out ATargetPlatform? TargetPlatform)) throw new TargetPlatformNotSupportedException(HostPlatform, CompilePlatform);
 
+        ATargetPlatform.TargetPlatform = TargetPlatform;
+
+        AProjectDefinition Project = ProjectFinder.FindProject(ProjectName);
         ProjectDirectories.Create(Project, TargetPlatform, CompileConfiguration);
         
         AModuleDefinition[] SelectedModules = [

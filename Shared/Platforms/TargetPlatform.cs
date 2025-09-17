@@ -38,6 +38,17 @@ public enum ETargetPlatformType
 
 public abstract class ATargetPlatform
 {
+    private static ATargetPlatform? _targetPlatform = null;
+
+    public static ATargetPlatform? TargetPlatform
+    {
+        get => _targetPlatform!;
+        set
+        {
+            _targetPlatform ??= value;
+        }
+    }
+
     public virtual string Name => Platform.ToString();
     public abstract ETargetPlatform Platform { get; }
     public abstract IToolchain Toolchain { get; }

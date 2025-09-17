@@ -35,11 +35,12 @@ public class Clean : IExecutableCommand
             ProjectFinder.CreateAndCompileProject(RootDirectory, ProjectName);
         }
 
-        AProjectDefinition Project = ProjectFinder.FindProject(ProjectName);
-        
         AHostPlatform HostPlatform = AHostPlatform.GetHost();
         if (!HostPlatform.SupportedTargetPlatforms.TryGetValue(CompilePlatform, out ATargetPlatform? TargetPlatform)) throw new TargetPlatformNotSupportedException(HostPlatform, CompilePlatform);
-        
+
+        ATargetPlatform.TargetPlatform = TargetPlatform;
+
+        AProjectDefinition Project = ProjectFinder.FindProject(ProjectName);
         ProjectDirectories.Create(Project, TargetPlatform, CompileConfiguration);
 
         Dictionary<string, AModuleDefinition> AllModulesMap = [];

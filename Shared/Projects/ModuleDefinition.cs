@@ -4,7 +4,7 @@ using IO;
 using Platforms;
 using Exceptions;
 using Shared.Platforms;
-
+using Shared.Extensions;
 
 public abstract class AModuleDefinition : ADefinition
 {
@@ -41,7 +41,7 @@ public abstract class AModuleDefinition : ADefinition
     public DirectoryReference RootDirectory => _rootDirectory!;
     public DirectoryReference SourcesDirectory => _sourcesDirectory!;
 
-    protected abstract void Configure();
+    protected abstract void Configure(ATargetPlatform InTargetPlatform);
 
     public IReadOnlySet<AModuleDefinition> GetDependencies(ETargetPlatform InTargetPlatform = ETargetPlatform.Any)
     {
@@ -108,6 +108,14 @@ public abstract class AModuleDefinition : ADefinition
             ModuleSet.Add(DependencyModule);
 
             AddDependencyRecursively(DependencyModule);
+        }
+    }
+
+    protected void AddDependencyModuleNames(ETargetPlatformGroup InGroup, params string[] InModuleNames)
+    {
+        foreach (ETargetPlatform Platform in InGroup.GetTargetPlatformsInGroup())
+        {
+            AddDependencyModuleNames(Platform, InModuleNames);
         }
     }
 
@@ -208,7 +216,7 @@ public abstract class AModuleDefinition : ADefinition
         _rootDirectory = InRootDirectory;
         _sourcesDirectory = InRootDirectory.Combine(SourcesDirectoryName);
 
-        Configure();
+        Configure(ATargetPlatform.TargetPlatform!);
     }
 
     private void AddDependencyRecursively(AModuleDefinition InDependency)

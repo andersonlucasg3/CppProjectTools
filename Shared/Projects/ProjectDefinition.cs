@@ -41,7 +41,7 @@ public abstract class AProjectDefinition : ADefinition
         return ProjectSet;
     }
 
-    protected abstract void Configure();
+    protected abstract void Configure(ATargetPlatform InTargetPlatform);
 
     protected void AddProjectDependency<TProject>(ETargetPlatform InTargetPlatform = ETargetPlatform.Any)
         where TProject : AProjectDefinition
@@ -125,7 +125,7 @@ public abstract class AProjectDefinition : ADefinition
         _rootDirectory = InRootDirectory;
         _modulesDirectory = InRootDirectory.Combine(ModulesDirectoryName);
 
-        Configure();
+        Configure(ATargetPlatform.TargetPlatform!);
 
         foreach (Dictionary<string, AModuleDefinition> Dict in _modulesPerPlatform.Values)
         {
