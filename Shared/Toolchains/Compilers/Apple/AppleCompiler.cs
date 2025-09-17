@@ -21,9 +21,9 @@ public class AppleCompiler(string InTargetOSVersionMin, string InSdkPath) : ACpp
             .. GetLanguageBySourceExtension(InCompileCommandInfo.TargetFile.Extension),
             "-MMD",
             "-MF",
-            InCompileCommandInfo.DependencyFile.PlatformPath,
-            $"-I{InCompileCommandInfo.SourcesDirectory}",
-            .. InCompileCommandInfo.HeaderSearchPaths.Select(IncludeDirectory => $"-I{IncludeDirectory}"),
+            InCompileCommandInfo.DependencyFile.PlatformPath.Quoted(),
+            $"-I{InCompileCommandInfo.SourcesDirectory.PlatformPath.Quoted()}",
+            .. InCompileCommandInfo.HeaderSearchPaths.Select(IncludeDirectory => $"-I{IncludeDirectory.PlatformPath.Quoted()}"),
             "-fPIC",
             $"-std={CppStandard}",
             "-stdlib=libc++",
@@ -34,11 +34,11 @@ public class AppleCompiler(string InTargetOSVersionMin, string InSdkPath) : ACpp
             .. GetOptimizationArguments(InCompileCommandInfo.Configuration),
             InTargetOSVersionMin,
             "-isysroot",
-            InSdkPath,
+            InSdkPath.Quoted(),
             "-c",
-            InCompileCommandInfo.TargetFile.PlatformPath,
+            InCompileCommandInfo.TargetFile.PlatformPath.Quoted(),
             "-o",
-            InCompileCommandInfo.ObjectFile.PlatformPath,
+            InCompileCommandInfo.ObjectFile.PlatformPath.Quoted(),
         ];
     }
 
@@ -48,11 +48,11 @@ public class AppleCompiler(string InTargetOSVersionMin, string InSdkPath) : ACpp
             "xcrun",
             "clang++",
             GetClangBinaryTypeArgument(InLinkCommandInfo.Module.BinaryType),
-            string.Join(' ', InLinkCommandInfo.ObjectFiles.Select(Each => Each.PlatformPath)),
+            string.Join(' ', InLinkCommandInfo.ObjectFiles.Select(Each => Each.PlatformPath.Quoted())),
             "-o",
-            InLinkCommandInfo.LinkedFile.PlatformPath,
+            InLinkCommandInfo.LinkedFile.PlatformPath.Quoted(),
             "-isysroot",
-            InSdkPath,
+            InSdkPath.Quoted(),
             "-rpath",
             "@loader_path/",
         ];
@@ -67,7 +67,7 @@ public class AppleCompiler(string InTargetOSVersionMin, string InSdkPath) : ACpp
 
         if (InLinkCommandInfo.LibrarySearchPaths.Length > 0)
         {
-            CommandLine.AddRange(InLinkCommandInfo.LibrarySearchPaths.Select(LibrarySearchPath => $"-L{LibrarySearchPath}"));
+            CommandLine.AddRange(InLinkCommandInfo.LibrarySearchPaths.Select(LibrarySearchPath => $"-L{LibrarySearchPath.PlatformPath.Quoted()}"));
         }
 
         AModuleDefinition[] ModuleDependencies = [

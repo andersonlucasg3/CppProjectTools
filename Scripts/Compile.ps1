@@ -25,6 +25,7 @@ param(
     [string] $Configuration = "Debug",
 
     [ValidateSet(
+        "Any",
         "x64",
         "Arm64"
     )]
@@ -73,6 +74,6 @@ AddSwitch ([ref]$Arguments) "Recompile" $Recompile
 AddSwitch ([ref]$Arguments) "PrintCompileCommands" $PrintCompileCommands
 AddSwitch ([ref]$Arguments) "PrintLinkCommands" $PrintLinkCommands
 
-dotnet exec ./Binaries/DotNet/ProjectTools/BuildTool.dll $Arguments
+dotnet exec "$(Get-Location)/Binaries/DotNet/ProjectTools/BuildTool.dll" $Arguments
 
 Exit $LASTEXITCODE

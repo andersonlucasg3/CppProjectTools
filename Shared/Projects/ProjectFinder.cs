@@ -7,6 +7,8 @@ using Misc;
 using Processes;
 using Exceptions;
 using VisualStudio.CharpProjects;
+using Shared.Extensions;
+
 
 public static class ProjectFinder 
 {
@@ -45,9 +47,9 @@ public static class ProjectFinder
 
         ProcessResult ProcessResult = ProcessExecutorExtension.Run([
             "dotnet",
-            "build", $"{InCSharpProjectFile.PlatformPath}",
+            "publish", $"{InCSharpProjectFile.PlatformPath.Quoted()}",
             "-c", "Debug",
-            "-o", $"{IntermediateBinariesDirectory.PlatformPath}",
+            "-o", $"{IntermediateBinariesDirectory.PlatformPath.Quoted()}",
         ], true);
 
         if (!ProcessResult.bSuccess) throw new CSharpProjectCompilationException(ProcessResult.StandardOutput);

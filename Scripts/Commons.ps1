@@ -41,7 +41,7 @@ function CompileProjectTools
     $ProjectToolsSolution = "$(Get-Location)/ProjectTools/ProjectTools.sln"
     $ProjectToolsOutput = "$(Get-Location)/Binaries/DotNet/ProjectTools"
     
-    $Output = dotnet build $ProjectToolsSolution -c Debug -o $ProjectToolsOutput | Out-String
+    $Output = dotnet publish $ProjectToolsSolution -c Debug -o $ProjectToolsOutput
 
     if (!$?)
     {
