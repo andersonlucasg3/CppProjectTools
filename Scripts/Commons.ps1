@@ -36,19 +36,19 @@ function AddSwitch()
 
 function CompileProjectTools 
 {
-    Write-Host "Compiling bundled BuildTool"
+    Write-Host "Compiling bundled ProjectTools"
 
-    $ProjectToolsSolution = "$(Get-Location)/ProjectTools/ProjectTools.sln"
+    $ProjectToolsSolution = Get-ChildItem -Path "**/ProjectTools/ProjectTools.csproj"
     $ProjectToolsOutput = "$(Get-Location)/Binaries/DotNet/ProjectTools"
     
-    $Output = dotnet publish $ProjectToolsSolution -c Debug -o $ProjectToolsOutput
+    $Output = dotnet publish $ProjectToolsSolution -c Debug -o $ProjectToolsOutput -p:PublishSingleFile=true
 
     if (!$?)
     {
-        Write-Host "BuildTool compilation failed:`n$Output" -ForegroundColor Red
+        Write-Host "ProjectTools compilation failed:`n$Output" -ForegroundColor Red
     }
     else
     {
-        Write-Host "BuildTool compiled successfully." -ForegroundColor Green
+        Write-Host "ProjectTools compiled successfully." -ForegroundColor Green
     }
 }

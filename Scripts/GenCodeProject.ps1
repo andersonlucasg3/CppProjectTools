@@ -35,7 +35,9 @@ param(
 )
 
 
-. $PSScriptRoot/Commons.ps1
+$CommonsScript = Get-ChildItem -Path "**/ProjectTools/**/Commons.ps1"
+
+. $CommonsScript
 
 CompileProjectTools
 
@@ -54,6 +56,6 @@ AddArgument ([ref]$Arguments) "Platform" $Platform
 AddArgument ([ref]$Arguments) "Configuration" $Configuration
 AddSwitch ([ref]$Arguments) "DisableMT" $DisableMT
 
-dotnet exec ./Binaries/DotNet/ProjectTools/BuildTool.dll $Arguments
+& "$(Get-Location)/Binaries/DotNet/ProjectTools/ProjectTools" $Arguments
 
 Exit $LASTEXITCODE

@@ -74,6 +74,8 @@ AddSwitch ([ref]$Arguments) "Recompile" $Recompile
 AddSwitch ([ref]$Arguments) "PrintCompileCommands" $PrintCompileCommands
 AddSwitch ([ref]$Arguments) "PrintLinkCommands" $PrintLinkCommands
 
-dotnet exec "$(Get-Location)/Binaries/DotNet/ProjectTools/BuildTool.dll" $Arguments
+Write-Host "Location: $(Get-Location)"
+
+& "$(Get-Location)/Binaries/DotNet/ProjectTools/ProjectTools" $Arguments
 
 Exit $LASTEXITCODE
