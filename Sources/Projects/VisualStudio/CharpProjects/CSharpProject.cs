@@ -43,8 +43,25 @@ public class CSharpProject(DirectoryReference InProjectRoot, FileReference[] InS
     class ProjectReference(DirectoryReference InProjectRoot) : ATag
     {
         protected override Parameter[] Parameters => [
-            new Parameter("Include", InProjectRoot.CombineFile("ProjectTools", "Shared", "Shared.csproj").PlatformPath)
+            new Parameter("Include", FindProjectToolsCSProj(InProjectRoot))
         ];
+
+        private static string FindProjectToolsCSProj(DirectoryReference InProjectRoot)
+        {
+            DirectoryReference[] DirectoryReferences = InProjectRoot.EnumerateDirectories("ProjectTools", SearchOption.AllDirectories);
+            if (DirectoryReferences.Length < 1)
+            {
+                throw new ProjectNotFoundException($"Could not find ProjectTools folder in any of the subdirectories from root: {InProjectRoot.PlatformPath}");
+            }
+
+            FileReference[] FileReferences = DirectoryReferences[0].EnumerateFiles("ProjectTools.csproj", SearchOption.AllDirectories);
+            if (FileReferences.Length < 1)
+            {
+                throw new ProjectNotFoundException($"Could not find ProjectTools.csproj in any of the subdirectories from root: {InProjectRoot.PlatformPath}");
+            }
+
+            return FileReferences[0].PlatformPath;
+        }
     }
 
     class CustomTag(string InName, string InValue) : ATag(InValue)
