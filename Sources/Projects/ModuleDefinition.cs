@@ -164,8 +164,8 @@ public abstract class AModuleDefinition : ADefinition
         }
     }
 
-    protected void AddAdditionalCompileAction<TAdditionalCompileAction>(ETargetPlatform InTargetPlatform)
-        where TAdditionalCompileAction : IAdditionalCompileAction, new()
+    protected TAdditionalCompileAction AddAdditionalCompileAction<TAdditionalCompileAction>(ETargetPlatform InTargetPlatform, TAdditionalCompileAction? InInstance = null)
+        where TAdditionalCompileAction : class, IAdditionalCompileAction, new()
     {
         if (!_additionalCompileActions.TryGetValue(InTargetPlatform, out List<IAdditionalCompileAction>? CompileActions))
         {
@@ -173,18 +173,24 @@ public abstract class AModuleDefinition : ADefinition
             _additionalCompileActions.Add(InTargetPlatform, CompileActions);
         }
 
-        CompileActions.Add(new TAdditionalCompileAction());
+        CompileActions.Add(InInstance ??= new TAdditionalCompileAction());
+
+        return InInstance!;
     }
 
-    protected void AddAdditionalCompileAction<TAdditionalCompileAction>(ETargetPlatformGroup InTargetPlatformGroup)
-        where TAdditionalCompileAction : IAdditionalCompileAction, new()
+    protected TAdditionalCompileAction AddAdditionalCompileAction<TAdditionalCompileAction>(ETargetPlatformGroup InTargetPlatformGroup)
+        where TAdditionalCompileAction : class, IAdditionalCompileAction, new()
     {
         ETargetPlatform[] Platforms = InTargetPlatformGroup.GetTargetPlatformsInGroup();
 
+        TAdditionalCompileAction CompileAction = new();
+
         foreach (ETargetPlatform Platform in Platforms)
         {
-            AddAdditionalCompileAction<TAdditionalCompileAction>(Platform);
+            AddAdditionalCompileAction(Platform, CompileAction);
         }
+
+        return CompileAction;
     }
 
     internal void SetOwnerProject(AProjectDefinition InOwnerProject)
