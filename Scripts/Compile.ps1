@@ -39,7 +39,9 @@ param(
     [switch] $ProjectToolsOnly
 )
 
-. ./ProjectTools/Scripts/Commons.ps1
+$CommonsScript = Get-ChildItem -Path "**/ProjectTools/**/Commons.ps1"
+
+. $CommonsScript
 
 CompileProjectTools
 
