@@ -8,6 +8,7 @@ using ProjectTools.Processes;
 using ProjectTools.IO;
 using ProjectTools.Sources;
 using ProjectTools.Tasks;
+using ProjectTools.Compilation.Actions;
 
 namespace ProjectTools.Commands;
 
@@ -162,6 +163,15 @@ public class Compile : IExecutableCommand
                 bSuccess &=
                     Info.CompileResult is ECompilationResult.NothingToCompile or ECompilationResult.CompilationSuccess &&
                     Info.LinkResult is ELinkageResult.LinkUpToDate or ELinkageResult.LinkSuccess;
+            }
+
+            IAdditionalCompileAction[] AdditionalCompileActions = [
+                .. ModuleInfo.Module.GetAdditionalCompileActions(ETargetPlatform.Any),
+                .. ModuleInfo.Module.GetAdditionalCompileActions(TargetPlatform.Platform)
+            ];
+            foreach (IAdditionalCompileAction Action in AdditionalCompileActions)
+            {
+                bSuccess &= Action.Execute(ModuleInfo, TargetPlatform);
             }
         });
 

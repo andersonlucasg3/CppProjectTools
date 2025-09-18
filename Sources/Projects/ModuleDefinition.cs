@@ -5,6 +5,8 @@ using Platforms;
 using Exceptions;
 using ProjectTools.Platforms;
 using ProjectTools.Extensions;
+using ProjectTools.Compilation.Actions;
+
 
 public abstract class AModuleDefinition : ADefinition
 {
@@ -19,7 +21,7 @@ public abstract class AModuleDefinition : ADefinition
     private readonly Dictionary<ETargetPlatform, HashSet<string>> _linkWithLibrariesPerPlatform = [];
 
     private readonly List<string> _librarySearchPaths = [];
-
+    private readonly Dictionary<ETargetPlatform, List<IAdditionalCompileAction>> _additionalCompileActions = [];
     private readonly List<DirectoryReference> _copyResourcesDirectories = [];
 
     protected virtual string SourcesDirectoryName { get; } = "Sources";
@@ -42,46 +44,6 @@ public abstract class AModuleDefinition : ADefinition
     public DirectoryReference SourcesDirectory => _sourcesDirectory!;
 
     protected abstract void Configure(ATargetPlatform InTargetPlatform);
-
-    public IReadOnlySet<AModuleDefinition> GetDependencies(ETargetPlatform InTargetPlatform = ETargetPlatform.Any)
-    {
-        if (!_dependenciesPerPlatform.TryGetValue(InTargetPlatform, out HashSet<AModuleDefinition>? ModuleSet))
-        {
-            return new HashSet<AModuleDefinition>();
-        }
-
-        return ModuleSet;
-    }
-
-    public IReadOnlySet<string> GetHeaderSearchPaths(ETargetPlatform InTargetPlatform = ETargetPlatform.Any)
-    {
-        if (!_headerSearchPathPerPlatform.TryGetValue(InTargetPlatform, out HashSet<string>? SearchPathsSet))
-        {
-            return new HashSet<string>();
-        }
-
-        return SearchPathsSet;
-    }
-
-    public IReadOnlySet<string> GetCompilerDefinitions(ETargetPlatform InTargetPlatform = ETargetPlatform.Any)
-    {
-        if (!_compilerDefinitionsPerPlatform.TryGetValue(InTargetPlatform, out HashSet<string>? CompilerDefinitionsSet))
-        {
-            return new HashSet<string>();
-        }
-
-        return CompilerDefinitionsSet;
-    }
-
-    public IReadOnlySet<string> GetLinkWithLibraries(ETargetPlatform InTargetPlatform)
-    {
-        if (!_linkWithLibrariesPerPlatform.TryGetValue(InTargetPlatform, out HashSet<string>? LinkWithLibrariesSet))
-        {
-            return new HashSet<string>();
-        }
-
-        return LinkWithLibrariesSet;
-    }
 
     protected void AddDependencyModuleNames(params string[] InModuleNames)
     {
@@ -202,6 +164,29 @@ public abstract class AModuleDefinition : ADefinition
         }
     }
 
+    protected void AddAdditionalCompileAction<TAdditionalCompileAction>(ETargetPlatform InTargetPlatform)
+        where TAdditionalCompileAction : IAdditionalCompileAction, new()
+    {
+        if (!_additionalCompileActions.TryGetValue(InTargetPlatform, out List<IAdditionalCompileAction>? CompileActions))
+        {
+            CompileActions = [];
+            _additionalCompileActions.Add(InTargetPlatform, CompileActions);
+        }
+
+        CompileActions.Add(new TAdditionalCompileAction());
+    }
+
+    protected void AddAdditionalCompileAction<TAdditionalCompileAction>(ETargetPlatformGroup InTargetPlatformGroup)
+        where TAdditionalCompileAction : IAdditionalCompileAction, new()
+    {
+        ETargetPlatform[] Platforms = InTargetPlatformGroup.GetTargetPlatformsInGroup();
+
+        foreach (ETargetPlatform Platform in Platforms)
+        {
+            AddAdditionalCompileAction<TAdditionalCompileAction>(Platform);
+        }
+    }
+
     internal void SetOwnerProject(AProjectDefinition InOwnerProject)
     {
         _ownerProject = InOwnerProject;
@@ -217,6 +202,56 @@ public abstract class AModuleDefinition : ADefinition
         _sourcesDirectory = InRootDirectory.Combine(SourcesDirectoryName);
 
         Configure(ATargetPlatform.TargetPlatform!);
+    }
+
+    internal IReadOnlySet<AModuleDefinition> GetDependencies(ETargetPlatform InTargetPlatform = ETargetPlatform.Any)
+    {
+        if (!_dependenciesPerPlatform.TryGetValue(InTargetPlatform, out HashSet<AModuleDefinition>? ModuleSet))
+        {
+            return new HashSet<AModuleDefinition>();
+        }
+
+        return ModuleSet;
+    }
+
+    internal IReadOnlySet<string> GetHeaderSearchPaths(ETargetPlatform InTargetPlatform = ETargetPlatform.Any)
+    {
+        if (!_headerSearchPathPerPlatform.TryGetValue(InTargetPlatform, out HashSet<string>? SearchPathsSet))
+        {
+            return new HashSet<string>();
+        }
+
+        return SearchPathsSet;
+    }
+
+    internal IReadOnlySet<string> GetCompilerDefinitions(ETargetPlatform InTargetPlatform = ETargetPlatform.Any)
+    {
+        if (!_compilerDefinitionsPerPlatform.TryGetValue(InTargetPlatform, out HashSet<string>? CompilerDefinitionsSet))
+        {
+            return new HashSet<string>();
+        }
+
+        return CompilerDefinitionsSet;
+    }
+
+    internal IReadOnlySet<string> GetLinkWithLibraries(ETargetPlatform InTargetPlatform)
+    {
+        if (!_linkWithLibrariesPerPlatform.TryGetValue(InTargetPlatform, out HashSet<string>? LinkWithLibrariesSet))
+        {
+            return new HashSet<string>();
+        }
+
+        return LinkWithLibrariesSet;
+    }
+
+    internal IReadOnlyList<IAdditionalCompileAction> GetAdditionalCompileActions(ETargetPlatform InTargetPlatform)
+    {
+        if (!_additionalCompileActions.TryGetValue(InTargetPlatform, out List<IAdditionalCompileAction>? AdditionalCompileActions))
+        {
+            return [];
+        }
+
+        return AdditionalCompileActions;
     }
 
     private void AddDependencyRecursively(AModuleDefinition InDependency)
