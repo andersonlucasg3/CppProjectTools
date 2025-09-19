@@ -11,8 +11,8 @@ using ProjectTools.Platforms;
 
 public class XcodeToolchain : AClangToolchain
 {
-    public const string IPhoneOSVersionMin = "17.0";
-    public const string MacOSVersionMin = "13.4";
+    public const string IPhoneOSVersionMin = "18.0";
+    public const string MacOSVersionMin = "15.0";
 
     private readonly Dictionary<ETargetPlatform, Dictionary<ETargetArch, AppleCompiler>> _appleCompilers;
     private readonly MetalCompiler _metalCompiler = new();
