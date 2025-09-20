@@ -36,25 +36,29 @@ param(
     [switch] $Relink,
     [switch] $PrintCompileCommands,
     [switch] $PrintLinkCommands,
-    [switch] $ProjectToolsOnly
+    [switch] $ProjectToolsOnly,
+    [switch] $SkipCompileProjectTools
 )
 
 $CommonsScript = Get-ChildItem -Path "**/ProjectTools/**/Commons.ps1"
 
 . $CommonsScript
 
-CompileProjectTools
-
-if (-not $?)
+if (-not $SkipCompileProjectTools -and -not $ProjectToolsOnly)
 {
-    return;
-}
+    CompileProjectTools
 
-if ($ProjectToolsOnly)
-{
-    Write-Host "Project tools only compilation requested. Exiting."
+    if (-not $?)
+    {
+        return;
+    }
 
-    return;
+    if ($ProjectToolsOnly)
+    {
+        Write-Host "Project tools only compilation requested. Exiting."
+
+        return;
+    }
 }
 
 $Arguments = [List[string]]::new()

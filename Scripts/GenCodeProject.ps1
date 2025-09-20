@@ -31,19 +31,22 @@ param(
     )]
     [string] $Configuration = "Debug",
 
-    [switch] $DisableMT = $false
+    [switch] $DisableMT,
+    [switch] $SkipCompileProjectTools
 )
-
 
 $CommonsScript = Get-ChildItem -Path "**/ProjectTools/**/Commons.ps1"
 
 . $CommonsScript
 
-CompileProjectTools
-
-if (-not $?)
+if (-not $SkipCompileProjectTools)
 {
-    return
+    CompileProjectTools
+
+    if (-not $?)
+    {
+        return
+    }
 }
 
 $Arguments = [List[string]]::new()
