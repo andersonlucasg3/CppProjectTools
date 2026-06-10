@@ -50,6 +50,14 @@ public class ThreadInfo(Thread? InThread, bool InTemporary = false)
             _count -= 1;
         }
     }
+
+    public bool IsComplete()
+    {
+        lock (_lock)
+        {
+            return _count <= 0;
+        }
+    }
 }
 
 interface IActionInfo
@@ -302,5 +310,19 @@ public static class ThreadWorker
         if (bShouldLock) lock (_threadLock) _actionQueue.TryDequeue(out ActionInfo);
         else _actionQueue.TryDequeue(out ActionInfo);
         ActionInfo?.Invoke();
+    }
+
+    /// <summary>
+    /// Dequeues and executes one pending action from the shared queue.
+    /// Returns true if an action was executed. Callers can use this to
+    /// help process work while waiting for their own batch to complete.
+    /// </summary>
+    public static bool TryExecutePendingAction()
+    {
+        IActionInfo? ActionInfo;
+        lock (_threadLock) _actionQueue.TryDequeue(out ActionInfo);
+        if (ActionInfo is null) return false;
+        ActionInfo.Invoke();
+        return true;
     }
 }
