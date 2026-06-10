@@ -35,7 +35,6 @@ public static class ProcessExecutorExtension
         RunProcess.StartInfo = new()
         {
             FileName = Executable,
-            Arguments = string.Join(' ', Arguments),
             UseShellExecute = false,
             CreateNoWindow = true,
             RedirectStandardOutput = true,
@@ -43,23 +42,37 @@ public static class ProcessExecutorExtension
             StandardOutputEncoding = Encoding.UTF8,
             StandardErrorEncoding = Encoding.UTF8,
         };
-        
+
+        // Use ArgumentList for proper escaping of paths with spaces
+        foreach (string Arg in Arguments)
+        {
+            RunProcess.StartInfo.ArgumentList.Add(Arg);
+        }
+
         ProcessResult Result = new();
         RunProcess.OutputDataReceived += (_, Args) =>
         {
-            string NewOutputData = $"{Args.Data ?? ""}{Environment.NewLine}";
-            lock (Result) Result.StandardOutput += NewOutputData;
+            if (Args.Data is not null)
+            {
+                string NewOutputData = $"{Args.Data}{Environment.NewLine}";
+                lock (Result) Result.StandardOutput += NewOutputData;
+            }
         };
         RunProcess.ErrorDataReceived += (_, Args) =>
         {
-            string NewErrorData = $"{Args.Data}{Environment.NewLine}";
-            lock (Result) Result.StandardError += NewErrorData;
+            if (Args.Data is not null)
+            {
+                string NewErrorData = $"{Args.Data}{Environment.NewLine}";
+                lock (Result) Result.StandardError += NewErrorData;
+            }
         };
-        
+
         if (RunProcess.Start())
         {
             RunProcess.BeginOutputReadLine();
             RunProcess.BeginErrorReadLine();
+            RunProcess.WaitForExit();
+            // Wait for async read operations to drain before reading exit code
             RunProcess.WaitForExit();
         }
 

@@ -248,23 +248,14 @@ public static class ThreadWorker
         {
             Thread.Sleep(1);
 
-            bool bReleasedThread = false;
-
             lock (_threadLock)
             {
                 if (_actionQueue.Count > 0 && _availableThreads.TryDequeue(out ThreadInfo? ThreadInfo))
                 {
-                    bReleasedThread = true;
                     ThreadInfo.Release();
                 }
 
                 bShouldKeepRunning = _shouldKeepRunning;
-            }
-
-            if (!bReleasedThread && _actionQueue.Count > 0 && _availableThreads.Count == 0)
-            {
-                // No worker threads available — main worker steps in to ensure progress
-                ExecuteAction(false);
             }
         }
         while (bShouldKeepRunning);
@@ -275,10 +266,16 @@ public static class ThreadWorker
         bool bShouldKeepRunning = true;
         do
         {
-            if (!_threadInfoMap.TryGetValue(Thread.CurrentThread, out ThreadInfo? Info))
+            // Lock only for the map lookup — Wait() and ExecuteAction() run outside the lock
+            ThreadInfo? Info;
+            lock (_threadLock)
+            {
+                _threadInfoMap.TryGetValue(Thread.CurrentThread, out Info);
+            }
+
+            if (Info is null)
             {
                 Thread.Sleep(1);
-
                 continue;
             }
 
@@ -304,11 +301,10 @@ public static class ThreadWorker
         while (bShouldKeepRunning);
     }
 
-    private static void ExecuteAction(bool bShouldLock = true)
+    private static void ExecuteAction()
     {
         IActionInfo? ActionInfo;
-        if (bShouldLock) lock (_threadLock) _actionQueue.TryDequeue(out ActionInfo);
-        else _actionQueue.TryDequeue(out ActionInfo);
+        lock (_threadLock) _actionQueue.TryDequeue(out ActionInfo);
         ActionInfo?.Invoke();
     }
 

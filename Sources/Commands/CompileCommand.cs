@@ -86,20 +86,17 @@ public class Compile : IExecutableCommand
                 return false;
             }
 
-            // TODO: fix this so specifying a module that has more than one layer of dependencies will not
-            // cause a forever waiting linkage from dependencies
-            SelectedModules = [
-                ModuleDefinition,
-                .. ModuleDefinition.GetDependencies(ETargetPlatform.Any),
-                .. ModuleDefinition.GetDependencies(TargetPlatform.Platform)
-            ];
+            SelectedModules = CollectWithTransitiveDependencies([ModuleDefinition], TargetPlatform.Platform);
             Console.WriteLine($"Compiling specified module: {ModuleName}");
         }
         else
         {
-            SelectedModules = [.. AllModules.Where(Each => Modules.Contains(Each.Name))];
+            AModuleDefinition[] Requested = [.. AllModules.Where(Each => Modules.Contains(Each.Name))];
+            SelectedModules = CollectWithTransitiveDependencies(Requested, TargetPlatform.Platform);
             Console.WriteLine($"Compiling specified modules: {string.Join(", ", Modules)}");
         }
+
+        Console.WriteLine($"Compiling transitive closure: {string.Join(", ", SelectedModules.Select(m => m.Name))}");
 
         Console.WriteLine($"Compiling on {HostPlatform.Name} platform targeting {TargetPlatform.Name}");
 
@@ -111,34 +108,10 @@ public class Compile : IExecutableCommand
                 return new CompileModuleInfo(Module, SC, new(Module, TargetPlatform.Toolchain));
             });
 
-        // needs to be sorted for the single thread run
-        // otherwise, it will get stuck due to waiting on dependencies
-        List<CompileModuleInfo> Sorted = [.. SelectedModules.Select(Module => ModuleCompilationResultMap[Module])];
-        Sorted.Sort((Lhs, Rhs) =>
-        {
-            HashSet<AModuleDefinition> LhsDeps = [
-                .. Lhs.Module.GetDependencies(ETargetPlatform.Any),
-                .. Lhs.Module.GetDependencies(TargetPlatform.Platform)
-            ];
-
-            HashSet<AModuleDefinition> RhsDeps = [
-                .. Rhs.Module.GetDependencies(ETargetPlatform.Any),
-                .. Rhs.Module.GetDependencies(TargetPlatform.Platform)
-            ];
-
-            if (LhsDeps.Contains(Rhs.Module))
-            {
-                return 1;
-            }
-            else if (RhsDeps.Contains(Lhs.Module))
-            {
-                return -1;
-            }
-            else
-            {
-                return 0;
-            }
-        });
+        // Topological sort: dependencies must appear before dependents.
+        // Uses Kahn's algorithm to produce a valid compilation order.
+        AModuleDefinition[] SortedModules = TopologicalSort(SelectedModules, TargetPlatform.Platform);
+        List<CompileModuleInfo> Sorted = [.. SortedModules.Select(Module => ModuleCompilationResultMap[Module])];
 
         CompileModuleInfo[] CompileModuleInfos = [.. Sorted];
 
@@ -191,6 +164,82 @@ public class Compile : IExecutableCommand
         Console.ResetColor();
 
         return bSuccess;
+    }
+
+    /// <summary>
+    /// Returns the full transitive closure of dependencies for the given seed modules.
+    /// </summary>
+    private static AModuleDefinition[] CollectWithTransitiveDependencies(AModuleDefinition[] Seeds, ETargetPlatform Platform)
+    {
+        HashSet<AModuleDefinition> Closure = [];
+        Queue<AModuleDefinition> Queue = new(Seeds);
+
+        while (Queue.TryDequeue(out AModuleDefinition? Module))
+        {
+            if (!Closure.Add(Module)) continue;
+
+            foreach (AModuleDefinition Dep in Module.GetDependencies(ETargetPlatform.Any))
+                Queue.Enqueue(Dep);
+            foreach (AModuleDefinition Dep in Module.GetDependencies(Platform))
+                Queue.Enqueue(Dep);
+        }
+
+        return [.. Closure];
+    }
+
+    /// <summary>
+    /// Produces a valid compilation order using Kahn's topological sort.
+    /// Dependencies are guaranteed to appear before the modules that depend on them.
+    /// </summary>
+    private static AModuleDefinition[] TopologicalSort(AModuleDefinition[] Modules, ETargetPlatform Platform)
+    {
+        // Build adjacency and in-degree maps
+        Dictionary<AModuleDefinition, int> InDegree = Modules.ToDictionary(m => m, _ => 0);
+        Dictionary<AModuleDefinition, List<AModuleDefinition>> Dependents = Modules.ToDictionary(m => m, _ => new List<AModuleDefinition>());
+
+        foreach (AModuleDefinition Module in Modules)
+        {
+            foreach (AModuleDefinition Dep in Module.GetDependencies(ETargetPlatform.Any))
+            {
+                if (InDegree.ContainsKey(Dep) && Dependents.ContainsKey(Dep))
+                {
+                    Dependents[Dep].Add(Module);
+                    InDegree[Module]++;
+                }
+            }
+            foreach (AModuleDefinition Dep in Module.GetDependencies(Platform))
+            {
+                if (InDegree.ContainsKey(Dep) && Dependents.ContainsKey(Dep))
+                {
+                    Dependents[Dep].Add(Module);
+                    InDegree[Module]++;
+                }
+            }
+        }
+
+        // Kahn's algorithm
+        Queue<AModuleDefinition> Queue = new(InDegree.Where(kv => kv.Value == 0).Select(kv => kv.Key));
+        List<AModuleDefinition> Sorted = [];
+
+        while (Queue.TryDequeue(out AModuleDefinition? Module))
+        {
+            Sorted.Add(Module);
+
+            foreach (AModuleDefinition Dependent in Dependents[Module])
+            {
+                InDegree[Dependent]--;
+                if (InDegree[Dependent] == 0)
+                    Queue.Enqueue(Dependent);
+            }
+        }
+
+        // Any remaining modules form cycles — append them at the end
+        foreach (AModuleDefinition Module in InDegree.Where(kv => kv.Value > 0).Select(kv => kv.Key))
+        {
+            Sorted.Add(Module);
+        }
+
+        return [.. Sorted];
     }
 }
 

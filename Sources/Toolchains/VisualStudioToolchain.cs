@@ -70,9 +70,6 @@ public partial class VisualStudioToolchain : AClangToolchain
             }
         }
 
-        _clangPath = _clangPath.Quoted();
-        _linkPath = _linkPath.Quoted();
-
         _windowsCompiler = new(_clangPath, _linkPath);
     }
 

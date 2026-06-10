@@ -14,6 +14,10 @@ public static class Parallelization
 
         ThreadInfo BatchInfo = new();
 
+        // Pre-increment counter BEFORE enqueuing — prevents race where
+        // workers call Release() before Add() runs, causing underflow.
+        BatchInfo.Add(InSourceArray.Length);
+
         // Enqueue all work items via the shared worker pool
         foreach (T Element in InSourceArray)
         {
@@ -24,11 +28,6 @@ public static class Parallelization
                 BatchInfo.Release();
             });
         }
-
-        // Help process work from the shared queue while our batch completes.
-        // This replaces the old ExecuteOnExclusiveThread + Thread.Join() pattern
-        // which created raw threads that blocked uselessly.
-        BatchInfo.Add(InSourceArray.Length);
         while (!BatchInfo.IsComplete())
         {
             if (!ThreadWorker.TryExecutePendingAction())
