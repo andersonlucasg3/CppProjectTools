@@ -90,21 +90,20 @@ public class CompileModuleTask(object InThreadSafeLock, CompileModuleInfo InInfo
 
         List<CompileAction> FullCompileActionsList = [];
         List<CompileAction> FilteredCompileActionList = [];
-        
-        Parallelization.ForEach(InSourceCollection.SourceFiles, SourceFile =>
+
+        // Sequential: this is lock-contended work with no benefit from parallelization,
+        // and using ForEach here causes work-stealing deadlocks with nested module actions.
+        foreach (FileReference SourceFile in InSourceCollection.SourceFiles)
         {
             CompileAction SourceCompileAction = new(InInfo.Module, InTargetPlatform, InConfiguration, InArch, SourceFile, ObjectsDirectory, InSourceCollection);
 
-            lock (InThreadSafeLock)
-            {
-                FullCompileActionsList.Add(SourceCompileAction);
+            FullCompileActionsList.Add(SourceCompileAction);
 
-                if (ChecksumStorage.Shared.ShouldRecompile(SourceCompileAction, InToolchain))
-                {
-                    FilteredCompileActionList.Add(SourceCompileAction);
-                }
+            if (ChecksumStorage.Shared.ShouldRecompile(SourceCompileAction, InToolchain))
+            {
+                FilteredCompileActionList.Add(SourceCompileAction);
             }
-        });
+        }
         OutCompileActions = [.. FullCompileActionsList];
         
         return [.. FilteredCompileActionList];

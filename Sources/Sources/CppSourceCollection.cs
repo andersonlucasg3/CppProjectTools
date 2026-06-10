@@ -89,7 +89,8 @@ public class CppSourceCollection : ISourceCollection
             }
         ];
 
-        Parallelization.ForEach(Actions, Action => Action.Invoke());
+        // Sequential: avoids work-stealing deadlock with nested ForEach calls
+        foreach (Action Action in Actions) Action.Invoke();
 
         HeaderFiles = [.. HeadersList];
         SourceFiles = [.. SourcesList];
