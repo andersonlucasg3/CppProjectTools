@@ -40,7 +40,7 @@ param(
     [switch] $SkipCompileProjectTools
 )
 
-$CommonsScript = Get-ChildItem -Path "**/ProjectTools/**/Commons.ps1"
+$CommonsScript = "$PSScriptRoot/Commons.ps1"
 
 . $CommonsScript
 

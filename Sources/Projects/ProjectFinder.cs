@@ -47,9 +47,9 @@ public static class ProjectFinder
 
         ProcessResult ProcessResult = ProcessExecutorExtension.Run([
             "dotnet",
-            "publish", $"{InCSharpProjectFile.PlatformPath.Quoted()}",
+            "publish", $"{InCSharpProjectFile.PlatformPath}",
             "-c", "Debug",
-            "-o", $"{IntermediateBinariesDirectory.PlatformPath.Quoted()}",
+            "-o", $"{IntermediateBinariesDirectory.PlatformPath}",
         ], true);
 
         if (!ProcessResult.bSuccess) throw new CSharpProjectCompilationException(ProcessResult.StandardOutput);

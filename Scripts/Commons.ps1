@@ -34,14 +34,14 @@ function AddSwitch()
     $Arguments.Value.Add("-$ParameterName")
 }
 
-function CompileProjectTools 
+function CompileProjectTools
 {
     Write-Host "Compiling bundled ProjectTools"
 
-    $ProjectToolsSolution = Get-ChildItem -Path "**/ProjectTools/ProjectTools.csproj"
+    $ProjectToolsProject = "$PSScriptRoot/../ProjectTools.csproj"
     $ProjectToolsOutput = "$(Get-Location)/Binaries/DotNet/ProjectTools"
-    
-    $Output = dotnet publish $ProjectToolsSolution -c Debug -o $ProjectToolsOutput -p:PublishSingleFile=true
+
+    $Output = dotnet publish $ProjectToolsProject -c Debug -o $ProjectToolsOutput
 
     if (!$?)
     {
