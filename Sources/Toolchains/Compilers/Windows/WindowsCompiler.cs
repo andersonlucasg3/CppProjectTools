@@ -33,16 +33,16 @@ public class WindowsCompiler(string InClangPath, string InLinkPath) : ACppCompil
     {
         List<string> CommandLine = [
             _linkPath,
-            .. InLinkCommandInfo.ObjectFiles.Select(ObjectFile => ObjectFile.PlatformPath.Quoted()),
+            .. InLinkCommandInfo.ObjectFiles.Select(ObjectFile => ObjectFile.PlatformPath),
             GetLinkArgumentForBinaryType(InLinkCommandInfo.Module.BinaryType),
-            $"/OUT:{InLinkCommandInfo.LinkedFile.PlatformPath.Quoted()}",
+            $"/OUT:{InLinkCommandInfo.LinkedFile.PlatformPath}",
             .. InLinkCommandInfo.LinkWithLibraries.Select(LinkLibrary => $"/defaultlib:{LinkLibrary}"),
             .. GetLinkerOptimizationArguments(InLinkCommandInfo.Configuration, InLinkCommandInfo.LinkedFile),
         ];
 
         if (InLinkCommandInfo.LibrarySearchPaths.Length > 0)
         {
-            CommandLine.AddRange(InLinkCommandInfo.LibrarySearchPaths.Select(LibrarySearchPath => $"/LIBPATH:{LibrarySearchPath.PlatformPath.Quoted()}"));
+            CommandLine.AddRange(InLinkCommandInfo.LibrarySearchPaths.Select(LibrarySearchPath => $"/LIBPATH:{LibrarySearchPath.PlatformPath}"));
         }
 
         AModuleDefinition[] ModuleDependencies = [
@@ -71,7 +71,7 @@ public class WindowsCompiler(string InClangPath, string InLinkPath) : ACppCompil
     {
         return InConfiguration switch
         {
-            ECompileConfiguration.Debug => ["/DEBUG", $"/PDB:{InLinkedFile.ChangeExtension("pdb").PlatformPath.Quoted()}"],
+            ECompileConfiguration.Debug => ["/DEBUG", $"/PDB:{InLinkedFile.ChangeExtension("pdb").PlatformPath}"],
             ECompileConfiguration.Release => [], // maybe in the future?
             _ => throw new ArgumentOutOfRangeException(nameof(InConfiguration), InConfiguration, null),
         };

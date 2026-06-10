@@ -132,7 +132,7 @@ public partial class VisualStudioToolchain : AClangToolchain
     {
         List<string> CompilerDefinitions = [];
 
-        CompilerDefinitions.Add($"{InModule.Name.ToUpper()}_API=__declspec(dllexport)".Quoted());
+        CompilerDefinitions.Add($"{InModule.Name.ToUpper()}_API=__declspec(dllexport)");
 
         AModuleDefinition[] Dependencies = [
             .. InModule.GetDependencies(ETargetPlatform.Any),
@@ -141,7 +141,7 @@ public partial class VisualStudioToolchain : AClangToolchain
 
         foreach (AModuleDefinition Dependency in Dependencies)
         {
-            CompilerDefinitions.Add($"{Dependency.Name.ToUpper()}_API=__declspec(dllimport)".Quoted());
+            CompilerDefinitions.Add($"{Dependency.Name.ToUpper()}_API=__declspec(dllimport)");
         }
 
         return [.. CompilerDefinitions];
