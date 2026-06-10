@@ -3,10 +3,11 @@ namespace ProjectTools.Processes;
 public static class Parallelization
 {
     /// <summary>
-    /// Executes <paramref name="Action"/> for every element in <paramref name="InSourceArray"/>
-    /// using the shared ThreadWorker pool, then blocks until all items complete.
-    /// The calling thread helps process work from the shared queue while waiting,
-    /// so nested ForEach calls do not cause thread exhaustion.
+    /// Enqueues <paramref name="Action"/> for every element in <paramref name="InSourceArray"/>
+    /// via the shared ThreadWorker pool, then blocks until all items complete.
+    /// Worker threads and the MainThreadWorker dispatcher handle execution.
+    /// The calling thread does NOT steal work — this prevents re-entrancy deadlocks
+    /// when ForEach is called inside another ForEach action.
     /// </summary>
     public static void ForEach<T>(T[] InSourceArray, Action<T> Action)
     {
@@ -28,13 +29,14 @@ public static class Parallelization
                 BatchInfo.Release();
             });
         }
+
+        // Wait for our batch to complete. Worker threads and the dispatcher
+        // handle execution. We do NOT steal work to avoid re-entrancy when
+        // one ForEach action triggers a nested ForEach (e.g. module compile
+        // triggering compile actions, then waiting for dependencies).
         while (!BatchInfo.IsComplete())
         {
-            if (!ThreadWorker.TryExecutePendingAction())
-            {
-                // Nothing in the queue — yield to let workers produce more work
-                Thread.Sleep(1);
-            }
+            Thread.Sleep(1);
         }
     }
 }
