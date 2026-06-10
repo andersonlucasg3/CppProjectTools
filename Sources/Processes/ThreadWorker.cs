@@ -154,10 +154,10 @@ public static class ThreadWorker
                 Action = Action
             });
 
-            if (_threadInfoMap.Count >= _preallocatedThreadCount)
+            if (_availableThreads.Count == 0 && _actionQueue.Count > 1)
             {
-                // create and let it work
-                CreateNewWorkerThread(false).Release();
+                // All preallocated threads are busy — create a temporary worker for overflow
+                CreateNewWorkerThread(true).Release();
             }
         }
     }
@@ -178,10 +178,10 @@ public static class ThreadWorker
                 Object = InObject
             });
 
-            if (_threadInfoMap.Count >= _preallocatedThreadCount)
+            if (_availableThreads.Count == 0 && _actionQueue.Count > 1)
             {
-                // create and let it work
-                CreateNewWorkerThread(false).Release();
+                // All preallocated threads are busy — create a temporary worker for overflow
+                CreateNewWorkerThread(true).Release();
             }
         }
     }
@@ -253,9 +253,9 @@ public static class ThreadWorker
                 bShouldKeepRunning = _shouldKeepRunning;
             }
 
-            if (!bReleasedThread && _preallocatedThreadCount <= _actionQueue.Count)
+            if (!bReleasedThread && _actionQueue.Count > 0 && _availableThreads.Count == 0)
             {
-                // if no threads are available, just execute it
+                // No worker threads available — main worker steps in to ensure progress
                 ExecuteAction(false);
             }
         }
