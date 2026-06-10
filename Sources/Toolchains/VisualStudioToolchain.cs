@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 
 namespace ProjectTools.Toolchains;
 
@@ -21,16 +21,57 @@ public partial class VisualStudioToolchain : AClangToolchain
 
     public VisualStudioToolchain()
     {
-        if (!TryGetVSWhereExecutablePath(out string VSWherePath))
-        {
-            ProcessResult Result = this.Run(["pwsh", "-c", "winget", "install", "Microsoft.VisualStudio.Locator"]);
+        _vsToolchainRoot = string.Empty;
+        _clangPath = string.Empty;
+        _linkPath = string.Empty;
 
-            if (!Result.bSuccess) throw new VisualStudioToolchainNotFoundException(Result.StandardError);
+        // First, try to find clang-cl via VS installation
+        if (TryGetVSWhereExecutablePath(out string VSWherePath))
+        {
+            try
+            {
+                _vsToolchainRoot = GetVisualStudioToolchainPath(VSWherePath);
+                _clangPath = Path.Combine(_vsToolchainRoot, "VC", "Tools", "Llvm", "x64", "bin", "clang-cl.exe");
+            }
+            catch { /* Fall through to fallback paths */ }
         }
 
-        _vsToolchainRoot = GetVisualStudioToolchainPath(VSWherePath);
-        _clangPath = Path.Combine(_vsToolchainRoot, "VC", "Tools", "Llvm", "x64", "bin", "clang-cl.exe").Quoted();
-        _linkPath = Path.Combine(_vsToolchainRoot, "VC", "Tools", "Llvm", "x64", "bin", "lld-link.exe").Quoted();
+        // Fallback: check common LLVM install locations
+        if (string.IsNullOrEmpty(_clangPath) || !File.Exists(_clangPath))
+        {
+            string[] FallbackPaths = [
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "LLVM", "bin", "clang-cl.exe"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "LLVM", "bin", "clang-cl.exe"),
+            ];
+
+            foreach (string FallbackPath in FallbackPaths)
+            {
+                if (File.Exists(FallbackPath))
+                {
+                    _clangPath = FallbackPath;
+                    _linkPath = Path.Combine(Path.GetDirectoryName(FallbackPath)!, "lld-link.exe");
+                    break;
+                }
+            }
+        }
+
+        if (string.IsNullOrEmpty(_clangPath) || !File.Exists(_clangPath))
+        {
+            throw new VisualStudioToolchainNotFoundException("Could not find clang-cl.exe. Install LLVM or the VS C++ Clang tools component.");
+        }
+
+        if (!File.Exists(_linkPath))
+        {
+            // lld-link.exe might be named lld.exe in some distributions
+            string LldPath = Path.Combine(Path.GetDirectoryName(_clangPath)!, "lld.exe");
+            if (File.Exists(LldPath))
+            {
+                _linkPath = LldPath;
+            }
+        }
+
+        _clangPath = _clangPath.Quoted();
+        _linkPath = _linkPath.Quoted();
 
         _windowsCompiler = new(_clangPath, _linkPath);
     }
