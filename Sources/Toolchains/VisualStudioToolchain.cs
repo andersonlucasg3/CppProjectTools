@@ -62,11 +62,19 @@ public partial class VisualStudioToolchain : AClangToolchain
 
         if (!File.Exists(_linkPath))
         {
-            // lld-link.exe might be named lld.exe in some distributions
-            string LldPath = Path.Combine(Path.GetDirectoryName(_clangPath)!, "lld.exe");
-            if (File.Exists(LldPath))
+            // lld.exe is the generic driver; lld-link.exe is the Windows linker
+            string LldLinkPath = Path.Combine(Path.GetDirectoryName(_clangPath)!, "lld-link.exe");
+            if (File.Exists(LldLinkPath))
             {
-                _linkPath = LldPath;
+                _linkPath = LldLinkPath;
+            }
+            else
+            {
+                string LldPath = Path.Combine(Path.GetDirectoryName(_clangPath)!, "lld.exe");
+                if (File.Exists(LldPath))
+                {
+                    _linkPath = LldPath;
+                }
             }
         }
 
