@@ -54,7 +54,7 @@ public class CSharpProject(DirectoryReference InProjectRoot, FileReference[] InS
                 throw new ProjectNotFoundException($"Could not find ProjectTools folder in any of the subdirectories from root: {InProjectRoot.PlatformPath}");
             }
 
-            FileReference[] FileReferences = DirectoryReferences[0].EnumerateFiles("ProjectTools.csproj", SearchOption.AllDirectories);
+            FileReference[] FileReferences = [.. DirectoryReferences.SelectMany(Each => Each.EnumerateFiles("ProjectTools.csproj", SearchOption.AllDirectories))];
             if (FileReferences.Length < 1)
             {
                 throw new ProjectNotFoundException($"Could not find ProjectTools.csproj in any of the subdirectories from root: {InProjectRoot.PlatformPath}");
