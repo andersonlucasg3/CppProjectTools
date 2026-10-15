@@ -35,7 +35,7 @@ public class CopyResourcesTask(AModuleDefinition InModule)
                     CopyActions.Add(new(SourceFile, DestinationFile));
                 }
 
-                FilesToRemove.Remove(DestinationFile);
+                FilesToRemove.RemoveAll(File => File.PlatformPath.Equals(DestinationFile.PlatformPath, StringComparison.OrdinalIgnoreCase));
             }
 
             foreach (FileReference FileToRemove in FilesToRemove)
