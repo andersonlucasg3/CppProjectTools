@@ -35,7 +35,12 @@ public class ClangProjectGenerator(AModuleDefinition[] InModules, ATargetPlatfor
         
         Parallelization.ForEach(InModules, Module =>
         {
-            ISourceCollection SourceCollection = ISourceCollection.CreateSourceCollection(InTargetPlatform.Platform, Module.BinaryType);
+            string[] ExcludedSourcePaths = [
+                .. Module.GetExcludedSourcePaths(ETargetPlatform.Any),
+                .. Module.GetExcludedSourcePaths(InTargetPlatform.Platform)
+            ];
+
+            ISourceCollection SourceCollection = ISourceCollection.CreateSourceCollection(InTargetPlatform.Platform, Module.BinaryType, ExcludedSourcePaths);
 
             SourceCollection.GatherSourceFiles(Module.SourcesDirectory);
 

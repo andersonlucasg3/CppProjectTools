@@ -96,7 +96,12 @@ public class VisualStudioProjectGenerator(AProjectDefinition InProjectDefinition
 
         DirectoryReference[] DependenciesSourcesDirectories = [.. InModuleDependencies.Select(Dependency => Dependency.SourcesDirectory)];
 
-        ISourceCollection SourceCollection = ISourceCollection.CreateSourceCollection(InTargetPlatform.Platform, InModule.BinaryType);
+        string[] ExcludedSourcePaths = [
+            .. InModule.GetExcludedSourcePaths(ETargetPlatform.Any),
+            .. InModule.GetExcludedSourcePaths(InTargetPlatform.Platform)
+        ];
+
+        ISourceCollection SourceCollection = ISourceCollection.CreateSourceCollection(InTargetPlatform.Platform, InModule.BinaryType, ExcludedSourcePaths);
         SourceCollection.GatherSourceFiles(InModule.SourcesDirectory);
 
         Project Project = new(new ProjectDependencies

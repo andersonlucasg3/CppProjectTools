@@ -19,6 +19,7 @@ public abstract class AModuleDefinition : ADefinition
     private readonly Dictionary<ETargetPlatform, HashSet<AModuleDefinition>> _dependenciesPerPlatform = [];
     private readonly Dictionary<ETargetPlatform, HashSet<string>> _compilerDefinitionsPerPlatform = [];
     private readonly Dictionary<ETargetPlatform, HashSet<string>> _linkWithLibrariesPerPlatform = [];
+    private readonly Dictionary<ETargetPlatform, List<string>> _excludedSourcePathsPerPlatform = [];
 
     private readonly List<string> _librarySearchPaths = [];
     private readonly Dictionary<ETargetPlatform, List<IAdditionalCompileAction>> _additionalCompileActions = [];
@@ -147,6 +148,34 @@ public abstract class AModuleDefinition : ADefinition
         }
     }
 
+    // each source path is relative to the module's sources directory, e.g. "Vulkan" excludes every source under Sources/Vulkan/
+    protected void AddExcludedSourcePaths(params string[] InSourcePaths)
+    {
+        AddExcludedSourcePaths(ETargetPlatform.Any, InSourcePaths);
+    }
+
+    protected void AddExcludedSourcePaths(ETargetPlatform InTargetPlatform, params string[] InSourcePaths)
+    {
+        if (!_excludedSourcePathsPerPlatform.TryGetValue(InTargetPlatform, out List<string>? SourcePathsList))
+        {
+            SourcePathsList = [];
+            _excludedSourcePathsPerPlatform.Add(InTargetPlatform, SourcePathsList);
+        }
+
+        foreach (string SourcePath in InSourcePaths)
+        {
+            SourcePathsList.Add(SourcePath);
+        }
+    }
+
+    protected void AddExcludedSourcePathsToGroup(ETargetPlatformGroup InTargetPlatformGroup, params string[] InSourcePaths)
+    {
+        foreach (ETargetPlatform Platform in InTargetPlatformGroup.GetTargetPlatformsInGroup())
+        {
+            AddExcludedSourcePaths(Platform, InSourcePaths);
+        }
+    }
+
     protected void AddCopyResourcesFolders(params string[] InCopyResourcesFolders)
     {
         foreach (string CopyResourcesFolder in InCopyResourcesFolders)
@@ -228,6 +257,16 @@ public abstract class AModuleDefinition : ADefinition
         }
 
         return SearchPathsSet;
+    }
+
+    internal IReadOnlyList<string> GetExcludedSourcePaths(ETargetPlatform InTargetPlatform = ETargetPlatform.Any)
+    {
+        if (!_excludedSourcePathsPerPlatform.TryGetValue(InTargetPlatform, out List<string>? SourcePathsList))
+        {
+            return [];
+        }
+
+        return SourcePathsList;
     }
 
     internal IReadOnlySet<string> GetCompilerDefinitions(ETargetPlatform InTargetPlatform = ETargetPlatform.Any)

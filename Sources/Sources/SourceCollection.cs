@@ -17,17 +17,17 @@ public interface ISourceCollection
 
     public void GatherSourceFiles(DirectoryReference InSourceRootDirectory);
 
-    public static ISourceCollection CreateSourceCollection(ETargetPlatform InTargetPlatform, EModuleBinaryType InBinaryType)
+    public static ISourceCollection CreateSourceCollection(ETargetPlatform InTargetPlatform, EModuleBinaryType InBinaryType, string[] InExcludedSourcePaths)
     {
         return InTargetPlatform.GetPlatformGroup() switch
         {
             ETargetPlatformGroup.Apple => InBinaryType switch
             {
                 EModuleBinaryType.ShaderLibrary => new MetalShaderSourceCollection(),
-                _ => new AppleSourceCollection(InTargetPlatform),
+                _ => new AppleSourceCollection(InTargetPlatform, InExcludedSourcePaths),
             },
-            ETargetPlatformGroup.Google => new CppSourceCollection(InTargetPlatform),
-            ETargetPlatformGroup.Microsoft => new CppSourceCollection(InTargetPlatform),
+            ETargetPlatformGroup.Google => new CppSourceCollection(InTargetPlatform, InExcludedSourcePaths),
+            ETargetPlatformGroup.Microsoft => new CppSourceCollection(InTargetPlatform, InExcludedSourcePaths),
             _ => throw new PlatformNotSupportedException(InTargetPlatform),
         };
     }

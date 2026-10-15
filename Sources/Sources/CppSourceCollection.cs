@@ -24,8 +24,9 @@ public class CppSourceCollection : ISourceCollection
     private string[] ExcludedPlatforms;
     private string[] ExcludedPlatformGroups;
     private string[] ExcludedPlatformTypes;
+    private string[][] ExcludedSourcePathComponents;
 
-    public CppSourceCollection(ETargetPlatform InTargetPlatform)
+    public CppSourceCollection(ETargetPlatform InTargetPlatform, string[] InExcludedSourcePaths)
     {
         List<ETargetPlatform> ExcludedPlatformsList = [.. Enum.GetValues<ETargetPlatform>()];
         ExcludedPlatformsList.Remove(ETargetPlatform.Any);
@@ -42,6 +43,7 @@ public class CppSourceCollection : ISourceCollection
         ExcludedPlatforms = [.. ExcludedPlatformsList.Select(Each => $"/{Each.ToSourcePlatformName()}/")];
         ExcludedPlatformGroups = [.. ExcludedPlatformGroupsList.Select(Each => $"/{Each}/")];
         ExcludedPlatformTypes = [.. ExcludedPlatformTypesList.Select(Each => $"/{Each}/")];
+        ExcludedSourcePathComponents = [.. InExcludedSourcePaths.Select(Each => Each.Split(['/', '\\'], StringSplitOptions.RemoveEmptyEntries))];
     }
 
     public void GatherSourceFiles(DirectoryReference InSourcesRootDirectory)
@@ -63,7 +65,7 @@ public class CppSourceCollection : ISourceCollection
                     {
                         foreach (FileReference Header in Headers)
                         {
-                            if (ExcludeSource(Header)) continue;
+                            if (ExcludeSource(Header, InSourcesRootDirectory)) continue;
 
                             HeadersList.Add(Header);
                         }
@@ -80,7 +82,7 @@ public class CppSourceCollection : ISourceCollection
                     {
                         foreach (FileReference Source in Sources)
                         {
-                            if(ExcludeSource(Source)) continue;
+                            if(ExcludeSource(Source, InSourcesRootDirectory)) continue;
 
                             SourcesList.Add(Source);
                         }
@@ -114,10 +116,23 @@ public class CppSourceCollection : ISourceCollection
         ];
     }
 
-    private bool ExcludeSource(FileReference InSource)
+    private bool ExcludeSource(FileReference InSource, DirectoryReference InSourcesRootDirectory)
     {
         return ExcludedPlatforms.Any(InSource.RelativePath.Contains) ||
                ExcludedPlatformGroups.Any(InSource.RelativePath.Contains) ||
-               ExcludedPlatformTypes.Any(InSource.RelativePath.Contains);
+               ExcludedPlatformTypes.Any(InSource.RelativePath.Contains) ||
+               IsExcludedSourcePath(InSource, InSourcesRootDirectory);
+    }
+
+    // entries are relative to the module sources directory and matched segment-wise,
+    // so "Vulkan" matches Vulkan/Renderer.cpp but not VulkanStuff/Thing.cpp nor MyVulkan.cpp
+    private bool IsExcludedSourcePath(FileReference InSource, DirectoryReference InSourcesRootDirectory)
+    {
+        string[] SourcePathComponents = Path.GetRelativePath(InSourcesRootDirectory.PlatformPath, InSource.PlatformPath)
+            .Split(['/', '\\'], StringSplitOptions.RemoveEmptyEntries);
+
+        return ExcludedSourcePathComponents.Any(ExcludedComponents =>
+            SourcePathComponents.Length >= ExcludedComponents.Length &&
+            SourcePathComponents.Take(ExcludedComponents.Length).SequenceEqual(ExcludedComponents));
     }
 }

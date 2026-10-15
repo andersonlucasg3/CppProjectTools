@@ -104,7 +104,12 @@ public class Compile : IExecutableCommand
             Module => Module,
             Module =>
             {
-                ISourceCollection SC = ISourceCollection.CreateSourceCollection(TargetPlatform.Platform, Module.BinaryType);
+                string[] ExcludedSourcePaths = [
+                    .. Module.GetExcludedSourcePaths(ETargetPlatform.Any),
+                    .. Module.GetExcludedSourcePaths(TargetPlatform.Platform)
+                ];
+
+                ISourceCollection SC = ISourceCollection.CreateSourceCollection(TargetPlatform.Platform, Module.BinaryType, ExcludedSourcePaths);
                 return new CompileModuleInfo(Module, SC, new(Module, TargetPlatform.Toolchain));
             });
 
