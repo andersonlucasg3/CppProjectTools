@@ -27,6 +27,9 @@ public abstract class AModuleDefinition : ADefinition
 
     protected virtual string SourcesDirectoryName { get; } = "Sources";
 
+    // submodules live beside the module sources directory, not inside it, so the parent never gathers their sources
+    protected virtual string SubModulesDirectoryName { get; } = "Modules";
+
     // can be overriden to change the output file name
     // for example in a library or application module with name X
     // the output linked file can have name Y
@@ -45,6 +48,29 @@ public abstract class AModuleDefinition : ADefinition
     public DirectoryReference SourcesDirectory => _sourcesDirectory!;
 
     protected abstract void Configure(ATargetPlatform InTargetPlatform);
+
+    // a submodule is a normal module (own binary, own compile/link tasks, resolvable as a dependency)
+    // whose root is <parent root>/Modules/<name> instead of <project modules directory>/<name>
+    protected void AddSubModule<TSubModule>(ETargetPlatform InTargetPlatform = ETargetPlatform.Any)
+        where TSubModule : AModuleDefinition, new()
+    {
+        TSubModule SubModule = new();
+
+        DirectoryReference SubModuleRootDirectory = RootDirectory.Combine(SubModulesDirectoryName).Combine(SubModule.Name);
+
+        OwnerProject.AddModuleWithRoot(InTargetPlatform, SubModule, SubModuleRootDirectory);
+    }
+
+    protected void AddSubModuleToGroup<TSubModule>(ETargetPlatformGroup InTargetPlatformGroup = ETargetPlatformGroup.Any)
+        where TSubModule : AModuleDefinition, new()
+    {
+        ETargetPlatform[] Platforms = InTargetPlatformGroup.GetTargetPlatformsInGroup();
+
+        foreach (ETargetPlatform Platform in Platforms)
+        {
+            AddSubModule<TSubModule>(Platform);
+        }
+    }
 
     protected void AddDependencyModuleNames(params string[] InModuleNames)
     {
@@ -227,14 +253,21 @@ public abstract class AModuleDefinition : ADefinition
         _ownerProject = InOwnerProject;
     }
 
+    // a submodule root is established when it is registered, before its Configure runs
+    internal void SetRootDirectory(DirectoryReference InRootDirectory)
+    {
+        _rootDirectory = InRootDirectory;
+        _sourcesDirectory = InRootDirectory.Combine(SourcesDirectoryName);
+    }
+
     internal void Configure(DirectoryReference InRootDirectory)
     {
         if (_bIsConfigured) return;
 
         _bIsConfigured = true;
 
-        _rootDirectory = InRootDirectory;
-        _sourcesDirectory = InRootDirectory.Combine(SourcesDirectoryName);
+        // an already established root (submodule) wins over the path computed by the project
+        SetRootDirectory(_rootDirectory ?? InRootDirectory);
 
         Configure(ATargetPlatform.TargetPlatform!);
     }

@@ -97,7 +97,19 @@ public abstract class AProjectDefinition : ADefinition
         }
     }
 
-    private void AddModuleInternal(ETargetPlatform InTargetPlatform, AModuleDefinition InModule)
+    // registers a module whose root is already established (a submodule) and configures it right away:
+    // submodules are registered from inside their parent's Configure, after the project-wide registration pass
+    internal void AddModuleWithRoot(ETargetPlatform InTargetPlatform, AModuleDefinition InModule, DirectoryReference InRootDirectory)
+    {
+        InModule.SetOwnerProject(this);
+        InModule.SetRootDirectory(InRootDirectory);
+
+        if (!AddModuleInternal(InTargetPlatform, InModule)) return;
+
+        InModule.Configure(InRootDirectory);
+    }
+
+    private bool AddModuleInternal(ETargetPlatform InTargetPlatform, AModuleDefinition InModule)
     {
         if (!_modulesPerPlatform.TryGetValue(InTargetPlatform, out Dictionary<string, AModuleDefinition>? ModuleMap))
         {
@@ -105,7 +117,7 @@ public abstract class AProjectDefinition : ADefinition
             _modulesPerPlatform.Add(InTargetPlatform, ModuleMap);
         }
 
-        if (ModuleMap.ContainsKey(InModule.Name)) return;
+        if (ModuleMap.ContainsKey(InModule.Name)) return false;
 
         ModuleMap.Add(InModule.Name, InModule);
 
@@ -114,6 +126,8 @@ public abstract class AProjectDefinition : ADefinition
         {
             AddModuleInternal(InTargetPlatform, Dependency);
         }
+
+        return true;
     }
 
     internal void Configure(DirectoryReference InRootDirectory)
@@ -127,9 +141,10 @@ public abstract class AProjectDefinition : ADefinition
 
         Configure(ATargetPlatform.TargetPlatform!);
 
-        foreach (Dictionary<string, AModuleDefinition> Dict in _modulesPerPlatform.Values)
+        // a module can register submodules while it is being configured, which mutates these maps
+        foreach (Dictionary<string, AModuleDefinition> Dict in _modulesPerPlatform.Values.ToArray())
         {
-            foreach (AModuleDefinition Module in Dict.Values)
+            foreach (AModuleDefinition Module in Dict.Values.ToArray())
             {
                 if (Module.OwnerProject != this) continue;
 
