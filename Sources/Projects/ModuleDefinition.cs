@@ -121,10 +121,10 @@ public abstract class AModuleDefinition : ADefinition
             _headerSearchPathPerPlatform.Add(InTargetPlatform, SearchPathsSet);
         }
 
+        // header search paths are always relative to the module root, the directory holding <Module>.Module.cs
         foreach (string HeaderSearchPath in InHeaderSearchPaths)
         {
-            // TODO: check this
-            DirectoryReference SearchPath = OwnerProject.ModulesDirectory.Combine(HeaderSearchPath);
+            DirectoryReference SearchPath = RootDirectory.Combine(HeaderSearchPath);
             SearchPathsSet.Add(SearchPath.PlatformRelativePath);
         }
     }

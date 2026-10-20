@@ -46,12 +46,21 @@ public class CompileAction
         ObjectFile = InObjectsDirectory.CombineFile($"{SourceFile.Name}{_objectFileExtension}");
         DependencyFile = $"{ObjectFile.FullPath}.d";
 
-        DirectoryReference[] HeaderSearchPaths = [
+        // header search paths are PUBLIC: a module exposes its own paths (Any + target platform) to every
+        // module that depends on it, so a dependency's external headers do not have to be declared again
+        DirectoryReference[] HeaderSearchPathCandidates = [
             .. InModule.GetHeaderSearchPaths(ETargetPlatform.Any),
             .. InModule.GetHeaderSearchPaths(InTargetPlatform.Platform),
+            .. InModule.GetDependencies(ETargetPlatform.Any).SelectMany(DependencyModule => DependencyModule.GetHeaderSearchPaths(ETargetPlatform.Any)),
+            .. InModule.GetDependencies(ETargetPlatform.Any).SelectMany(DependencyModule => DependencyModule.GetHeaderSearchPaths(InTargetPlatform.Platform)),
+            .. InModule.GetDependencies(InTargetPlatform.Platform).SelectMany(DependencyModule => DependencyModule.GetHeaderSearchPaths(ETargetPlatform.Any)),
+            .. InModule.GetDependencies(InTargetPlatform.Platform).SelectMany(DependencyModule => DependencyModule.GetHeaderSearchPaths(InTargetPlatform.Platform)),
             .. InModule.GetDependencies(ETargetPlatform.Any).Select(DependencyModule => DependencyModule.SourcesDirectory),
             .. InModule.GetDependencies(InTargetPlatform.Platform).Select(DependencyModule => DependencyModule.SourcesDirectory),
         ];
+
+        // several dependencies can expose the same path, so collapse them before they reach /I
+        DirectoryReference[] HeaderSearchPaths = [.. HeaderSearchPathCandidates.DistinctBy(HeaderSearchPath => HeaderSearchPath.PlatformPath)];
 
         string[] CompilerDefinitions = CompilerDefinitionsProvider.GetAutomaticCompilerDefinitions(InTargetPlatform, InConfiguration, InModule);
         
